@@ -69,7 +69,6 @@ def sender(receiver_ip, receiver_port, window_size):
 
         base = 1
         next_sequence = 1
-        # seq -> [serialized packet, ACK received?]
         in_flight = {}
         finished_reading = False
         deadline = None
@@ -92,7 +91,6 @@ def sender(receiver_ip, receiver_port, window_size):
 
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                # Selective Repeat: ACKed packets are never sent again.
                 for packet, acknowledged in in_flight.values():
                     if not acknowledged:
                         sock.sendto(packet, destination)
