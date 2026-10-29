@@ -63,7 +63,6 @@ def receiver(receiver_ip, receiver_port, window_size):
 
             if packet_type == DATA:
                 if sequence < expected:
-                    # A retransmitted old packet still needs its own ACK.
                     sock.sendto(make_ack(sequence), peer)
                 elif sequence < expected + window_size:
                     buffered.setdefault(sequence, payload)
@@ -72,7 +71,6 @@ def receiver(receiver_ip, receiver_port, window_size):
                         output.write(buffered.pop(expected))
                         expected += 1
                     output.flush()
-                # Out-of-window DATA is discarded without acknowledging it.
 
             elif packet_type == END:
                 if sequence == expected:
