@@ -42,15 +42,15 @@ def receiver(receiver_ip, receiver_port, window_size):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind((receiver_ip, receiver_port))
         peer = None
-        expected = 1             # Next in-order DATA sequence number
-        buffered = {}            # Out-of-order packets only
+        expected = 1             
+        buffered = {}            
         output = sys.stdout.buffer
 
         while True:
             raw, address = sock.recvfrom(2048)
             packet = parse_packet(raw)
             if packet is None:
-                continue  # No ACK for corrupted packets.
+                continue  
             packet_type, sequence, payload = packet
 
             if peer is None:
@@ -61,7 +61,7 @@ def receiver(receiver_ip, receiver_port, window_size):
                 continue
 
             if address != peer or packet_type == START:
-                continue  # One sender at a time; ignore repeated STARTs.
+                continue  
 
             if packet_type == DATA:
                 if expected <= sequence < expected + window_size:
@@ -70,7 +70,7 @@ def receiver(receiver_ip, receiver_port, window_size):
                         output.write(buffered.pop(expected))
                         expected += 1
                     output.flush()
-                # A cumulative ACK always reports the next expected packet.
+                
                 sock.sendto(make_ack(expected), peer)
 
             elif packet_type == END:
