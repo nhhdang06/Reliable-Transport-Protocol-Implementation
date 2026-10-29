@@ -8,7 +8,7 @@ import time
 from utils import PacketHeader, compute_checksum
 
 START, END, DATA, ACK = 0, 1, 2, 3
-MAX_PAYLOAD = 1456  # Ethernet MTU 1500 - IPv4 20 - UDP 8 - RTP 16
+MAX_PAYLOAD = 1456  
 TIMEOUT = 0.5
 
 
@@ -40,8 +40,6 @@ def send_start(sock, destination):
         try:
             raw, source = sock.recvfrom(2048)
         except socket.timeout:
-            # The assignment does not require loss recovery for START.
-            # A bounded recv timeout here makes it safe to re-check state.
             continue
         if source == destination and read_ack(raw) == 1:
             return
@@ -74,14 +72,13 @@ def sender(receiver_ip, receiver_port, window_size):
         sock.settimeout(TIMEOUT)
         send_start(sock, destination)
 
-        base = 1                  # First packet not cumulatively acknowledged
-        next_sequence = 1         # Sequence number for the next new DATA packet
-        pending = {}              # sequence -> already-encoded UDP payload
+        base = 1                  
+        next_sequence = 1         
+        pending = {}              
         finished_reading = False
         deadline = None
 
         while not finished_reading or pending:
-            # Stream stdin instead of storing the whole input file in memory.
             while not finished_reading and next_sequence < base + window_size:
                 chunk = sys.stdin.buffer.read(MAX_PAYLOAD)
                 if not chunk:
@@ -99,7 +96,6 @@ def sender(receiver_ip, receiver_port, window_size):
 
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                # Go-Back-N: resend all packets still in the window.
                 for packet in pending.values():
                     sock.sendto(packet, destination)
                 deadline = time.monotonic() + TIMEOUT
@@ -113,7 +109,7 @@ def sender(receiver_ip, receiver_port, window_size):
 
             ack = read_ack(raw) if source == destination else None
             if ack is None or not base < ack <= next_sequence:
-                continue  # Ignore duplicate, old, future, and invalid ACKs.
+                continue  
 
             for number in range(base, ack):
                 pending.pop(number, None)
